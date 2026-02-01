@@ -12,6 +12,7 @@ The library is intentionally small, dependency-free, and well-tested. Examples i
   - Great Circle Distance (Haversine formula) - shortest distance on a sphere
   - Rhumb Line Distance - constant bearing path distance
   - Distance outputs in kilometers, meters, and nautical miles
+  - Great-circle projection with cross-track and along-track distances (segment-clamped or infinite)
 
 - **Geohash**
   - Encode geographic coordinates into geohash strings
