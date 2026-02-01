@@ -314,9 +314,9 @@ func GreatCircleGeoJSONByDistance(start, end Point, distanceKm float64) (interfa
 	return splitAntimeridian(coords)
 }
 
-// LinePointDistance returns the distance between a point and the nearest point on a line.
+// CrossTrackDistanceToLine returns the distance between a point and the nearest point on a line.
 // Distance is returned in kilometers.
-func LinePointDistance(line LineString, point Point) (float64, error) {
+func CrossTrackDistanceToLine(line LineString, point Point) (float64, error) {
 	if len(line.Coordinates) < 2 {
 		return 0, errors.New("linestring must have at least 2 coordinates")
 	}
@@ -337,6 +337,11 @@ func LinePointDistance(line LineString, point Point) (float64, error) {
 	}
 
 	return minDist, nil
+}
+
+// LinePointDistance is deprecated. Use CrossTrackDistanceToLine instead.
+func LinePointDistance(line LineString, point Point) (float64, error) {
+	return CrossTrackDistanceToLine(line, point)
 }
 
 // PolygonPointDistance returns signed distance from a point to the edges of a polygon or multipolygon.
@@ -824,7 +829,7 @@ func ringDistance(ring []Position, point Point) (float64, error) {
 	if ring[0] != ring[len(ring)-1] {
 		coords = append(coords, ring[0])
 	}
-	return LinePointDistance(LineString{Coordinates: coords}, point)
+	return CrossTrackDistanceToLine(LineString{Coordinates: coords}, point)
 }
 
 func pointInPolygon(pt Position, poly Polygon) bool {

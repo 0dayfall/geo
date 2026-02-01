@@ -116,15 +116,15 @@ func TestGreatCircleGeoJSONByDistance(t *testing.T) {
 	}
 }
 
-func TestLinePointDistance(t *testing.T) {
+func TestCrossTrackDistanceToLine(t *testing.T) {
 	line := NewLineString([]Position{
 		{0, 0},
 		{90, 0},
 	})
 	point := NewPoint(45, 10)
-	dist, err := LinePointDistance(line, point)
+	dist, err := CrossTrackDistanceToLine(line, point)
 	if err != nil {
-		t.Fatalf("LinePointDistance() error = %v", err)
+		t.Fatalf("CrossTrackDistanceToLine() error = %v", err)
 	}
 	expected := EarthRadiusKm * toRadians(10.0)
 	if math.Abs(dist-expected) > 1e-3 {
