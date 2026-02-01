@@ -88,6 +88,34 @@ func TestGreatCircleGeoJSON(t *testing.T) {
 	}
 }
 
+func TestGreatCircleGeoJSONByDistance(t *testing.T) {
+	geom, err := GreatCircleGeoJSONByDistance(NewPoint(179, 0), NewPoint(-179, 0), 200)
+	if err != nil {
+		t.Fatalf("GreatCircleGeoJSONByDistance() error = %v", err)
+	}
+	if _, ok := geom.(MultiLineString); !ok {
+		t.Errorf("expected MultiLineString for antimeridian crossing")
+	}
+
+	geom2, err := GreatCircleGeoJSONByDistance(NewPoint(0, 0), NewPoint(90, 0), 5000)
+	if err != nil {
+		t.Fatalf("GreatCircleGeoJSONByDistance() error = %v", err)
+	}
+	ls, ok := geom2.(LineString)
+	if !ok {
+		t.Fatalf("expected LineString")
+	}
+	if len(ls.Coordinates) < 3 {
+		t.Errorf("linestring length = %v, want at least 3", len(ls.Coordinates))
+	}
+	if len(ls.Coordinates) >= 2 {
+		near := ls.Coordinates[1]
+		if math.Abs(near[0]-45.0) > 2.0 || math.Abs(near[1]-0.0) > 1e-6 {
+			t.Errorf("sample point approx = (%v, %v), want near (45, 0)", near[0], near[1])
+		}
+	}
+}
+
 func TestLinePointDistance(t *testing.T) {
 	line := NewLineString([]Position{
 		{0, 0},

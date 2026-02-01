@@ -287,31 +287,31 @@ func GreatCircleGeoJSON(start, end Point, npoints int) (interface{}, error) {
 	lat1, lon1 := positionLatLon(startPos)
 	lat2, lon2 := positionLatLon(endPos)
 
-	coords := make([]Position, npoints)
-	for i := 0; i < npoints; i++ {
-		f := float64(i) / float64(npoints-1)
-		lat, lon := GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, f)
-		coords[i] = Position{lon, lat}
+	coords := greatCircleCoordsByNPoints(lat1, lon1, lat2, lon2, npoints)
+	return splitAntimeridian(coords)
+}
+
+// GreatCircleGeoJSONByDistance returns a great-circle route split by distance steps.
+// Distance is in kilometers. If the path crosses the antimeridian, a MultiLineString
+// is returned. If start and end are the same, a LineString with two duplicate points
+// is returned.
+func GreatCircleGeoJSONByDistance(start, end Point, distanceKm float64) (interface{}, error) {
+	if distanceKm <= 0 {
+		return nil, errors.New("distance must be greater than 0")
 	}
 
-	var lines [][]Position
-	current := []Position{coords[0]}
-	for i := 1; i < len(coords); i++ {
-		prev := coords[i-1]
-		curr := coords[i]
-		if math.Abs(curr[0]-prev[0]) > 180.0 {
-			lines = append(lines, current)
-			current = []Position{curr}
-		} else {
-			current = append(current, curr)
-		}
-	}
-	lines = append(lines, current)
+	startPos := start.Coordinates
+	endPos := end.Coordinates
 
-	if len(lines) == 1 {
-		return NewLineString(lines[0]), nil
+	if startPos == endPos {
+		return NewLineString([]Position{startPos, endPos}), nil
 	}
-	return NewMultiLineString(lines), nil
+
+	lat1, lon1 := positionLatLon(startPos)
+	lat2, lon2 := positionLatLon(endPos)
+
+	coords := greatCircleCoordsByDistance(lat1, lon1, lat2, lon2, distanceKm)
+	return splitAntimeridian(coords)
 }
 
 // LinePointDistance returns the distance between a point and the nearest point on a line.
@@ -957,4 +957,57 @@ func ringAreaCentroid(ring []Position) (float64, float64, float64) {
 	cx /= 6 * area
 	cy /= 6 * area
 	return area, cx, cy
+}
+
+func greatCircleCoordsByNPoints(lat1, lon1, lat2, lon2 float64, npoints int) []Position {
+	if npoints < 2 {
+		npoints = 2
+	}
+	coords := make([]Position, npoints)
+	for i := 0; i < npoints; i++ {
+		f := float64(i) / float64(npoints-1)
+		lat, lon := GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, f)
+		coords[i] = Position{lon, lat}
+	}
+	return coords
+}
+
+func greatCircleCoordsByDistance(lat1, lon1, lat2, lon2, distanceKm float64) []Position {
+	total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+	if total == 0 {
+		return []Position{{lon1, lat1}, {lon2, lat2}}
+	}
+
+	coords := make([]Position, 0, int(math.Ceil(total/distanceKm))+1)
+	for dist := 0.0; dist < total; dist += distanceKm {
+		lat, lon := GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, dist)
+		coords = append(coords, Position{lon, lat})
+	}
+	coords = append(coords, Position{lon2, lat2})
+	return coords
+}
+
+func splitAntimeridian(coords []Position) (interface{}, error) {
+	if len(coords) < 2 {
+		return nil, errors.New("route must have at least 2 coordinates")
+	}
+
+	var lines [][]Position
+	current := []Position{coords[0]}
+	for i := 1; i < len(coords); i++ {
+		prev := coords[i-1]
+		curr := coords[i]
+		if math.Abs(curr[0]-prev[0]) > 180.0 {
+			lines = append(lines, current)
+			current = []Position{curr}
+		} else {
+			current = append(current, curr)
+		}
+	}
+	lines = append(lines, current)
+
+	if len(lines) == 1 {
+		return NewLineString(lines[0]), nil
+	}
+	return NewMultiLineString(lines), nil
 }

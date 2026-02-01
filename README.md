@@ -136,6 +136,13 @@ route, _ := geo.GreatCircleGeoJSON(
     10,
 )
 
+// Great-circle route with distance-based sampling (km)
+routeByDist, _ := geo.GreatCircleGeoJSONByDistance(
+    geo.NewPoint(0, 0),
+    geo.NewPoint(0, 90),
+    5000,
+)
+
 _ = pt
 _ = gcBearing
 _ = rhumbBearing
@@ -143,6 +150,7 @@ _ = center
 _ = com
 _ = surfacePoint
 _ = route
+_ = routeByDist
 ```
 
 ### Geohash
