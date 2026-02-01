@@ -242,3 +242,40 @@ func TestGreatCirclePointAtSpeed(t *testing.T) {
 		t.Errorf("point at speed = (%v, %v), want (%v, %v)", latSpeed, lonSpeed, latDist, lonDist)
 	}
 }
+
+func TestGreatCircleProject(t *testing.T) {
+	t.Run("equator projection", func(t *testing.T) {
+		lat1, lon1 := 0.0, 0.0
+		lat2, lon2 := 0.0, 90.0
+		latP, lonP := 10.0, 45.0
+
+		projLat, projLon, crossTrackKm, alongTrackKm := GreatCircleProject(lat1, lon1, lat2, lon2, latP, lonP)
+		if math.Abs(projLat-0.0) > 1e-9 || math.Abs(projLon-45.0) > 1e-6 {
+			t.Errorf("projected = (%v, %v), want (0, 45)", projLat, projLon)
+		}
+
+		expectedCross := EarthRadiusKm * toRadians(10.0)
+		if math.Abs(math.Abs(crossTrackKm)-expectedCross) > 1e-3 {
+			t.Errorf("cross-track = %v, want ±%v", crossTrackKm, expectedCross)
+		}
+
+		expectedAlong := EarthRadiusKm * toRadians(45.0)
+		if math.Abs(alongTrackKm-expectedAlong) > 1e-3 {
+			t.Errorf("along-track = %v, want %v", alongTrackKm, expectedAlong)
+		}
+	})
+
+	t.Run("outside segment", func(t *testing.T) {
+		lat1, lon1 := 0.0, 0.0
+		lat2, lon2 := 0.0, 30.0
+		latP, lonP := 0.0, 60.0
+
+		_, _, crossTrackKm, alongTrackKm := GreatCircleProject(lat1, lon1, lat2, lon2, latP, lonP)
+		if math.Abs(crossTrackKm) > 1e-9 {
+			t.Errorf("cross-track = %v, want 0", crossTrackKm)
+		}
+		if alongTrackKm <= GreatCircleDistance(lat1, lon1, lat2, lon2) {
+			t.Errorf("along-track = %v, want > total", alongTrackKm)
+		}
+	})
+}

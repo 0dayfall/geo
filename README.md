@@ -70,6 +70,15 @@ travelLat, travelLon := geo.GreatCirclePointAtSpeed(
     800.0, 2.0,
 )
 fmt.Printf("After 2h at 800 km/h: %.4f, %.4f\n", travelLat, travelLon)
+
+// Project an off-route point back onto the great-circle leg
+projLat, projLon, crossTrackKm, alongTrackKm := geo.GreatCircleProject(
+    0.0, 0.0,    // start
+    0.0, 90.0,   // end
+    10.0, 45.0,  // current position
+)
+fmt.Printf("Projection: %.4f, %.4f\n", projLat, projLon)
+fmt.Printf("Cross-track: %.2f km, Along-track: %.2f km\n", crossTrackKm, alongTrackKm)
 ```
 
 ### Geohash
