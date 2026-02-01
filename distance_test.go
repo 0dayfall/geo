@@ -123,3 +123,35 @@ func TestDistanceComparison(t *testing.T) {
 		}
 	}
 }
+
+func TestGreatCircleDistanceConversions(t *testing.T) {
+	lat1, lon1 := 40.7128, -74.0060
+	lat2, lon2 := 51.5074, -0.1278
+
+	km := GreatCircleDistance(lat1, lon1, lat2, lon2)
+	meters := GreatCircleDistanceMeters(lat1, lon1, lat2, lon2)
+	nm := GreatCircleDistanceNauticalMiles(lat1, lon1, lat2, lon2)
+
+	if math.Abs(meters-km*MetersPerKm) > 1e-6 {
+		t.Errorf("GreatCircleDistanceMeters() = %v, want %v", meters, km*MetersPerKm)
+	}
+	if math.Abs(nm-km/KmPerNauticalMile) > 1e-6 {
+		t.Errorf("GreatCircleDistanceNauticalMiles() = %v, want %v", nm, km/KmPerNauticalMile)
+	}
+}
+
+func TestRhumbLineDistanceConversions(t *testing.T) {
+	lat1, lon1 := 40.7128, -74.0060
+	lat2, lon2 := 51.5074, -0.1278
+
+	km := RhumbLineDistance(lat1, lon1, lat2, lon2)
+	meters := RhumbLineDistanceMeters(lat1, lon1, lat2, lon2)
+	nm := RhumbLineDistanceNauticalMiles(lat1, lon1, lat2, lon2)
+
+	if math.Abs(meters-km*MetersPerKm) > 1e-6 {
+		t.Errorf("RhumbLineDistanceMeters() = %v, want %v", meters, km*MetersPerKm)
+	}
+	if math.Abs(nm-km/KmPerNauticalMile) > 1e-6 {
+		t.Errorf("RhumbLineDistanceNauticalMiles() = %v, want %v", nm, km/KmPerNauticalMile)
+	}
+}

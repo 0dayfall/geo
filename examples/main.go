@@ -15,12 +15,20 @@ func main() {
 	nyLat, nyLon := 40.7128, -74.0060
 	londonLat, londonLon := 51.5074, -0.1278
 	gcDist := geo.GreatCircleDistance(nyLat, nyLon, londonLat, londonLon)
-	fmt.Printf("   Distance: %.2f km\n\n", gcDist)
+	fmt.Printf("   Distance: %.2f km\n", gcDist)
+	fmt.Printf("   Distance: %.0f m (%.2f NM)\n\n",
+		geo.GreatCircleDistanceMeters(nyLat, nyLon, londonLat, londonLon),
+		geo.GreatCircleDistanceNauticalMiles(nyLat, nyLon, londonLat, londonLon),
+	)
 
 	// 2. Rhumb Line Distance
 	fmt.Println("2. Rhumb Line Distance (constant bearing)")
 	rhumbDist := geo.RhumbLineDistance(nyLat, nyLon, londonLat, londonLon)
 	fmt.Printf("   Distance: %.2f km\n", rhumbDist)
+	fmt.Printf("   Distance: %.0f m (%.2f NM)\n",
+		geo.RhumbLineDistanceMeters(nyLat, nyLon, londonLat, londonLon),
+		geo.RhumbLineDistanceNauticalMiles(nyLat, nyLon, londonLat, londonLon),
+	)
 	fmt.Printf("   Difference from great circle: %.2f km\n\n", rhumbDist-gcDist)
 
 	// 3. Geohash

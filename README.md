@@ -7,6 +7,7 @@ Geo is a lightweight toolkit for spatial routing and optimization. It provides g
 - **Distance Calculations**
   - Great Circle Distance (Haversine formula) - shortest distance on a sphere
   - Rhumb Line Distance - constant bearing path distance
+  - Distance outputs in kilometers, meters, and nautical miles
 
 - **Geohash**
   - Encode geographic coordinates into geohash strings
@@ -40,9 +41,19 @@ import "github.com/0dayfall/geo"
 distance := geo.GreatCircleDistance(40.7128, -74.0060, 51.5074, -0.1278)
 fmt.Printf("NY to London: %.2f km\n", distance)
 
+// Additional units
+distanceMeters := geo.GreatCircleDistanceMeters(40.7128, -74.0060, 51.5074, -0.1278)
+distanceNM := geo.GreatCircleDistanceNauticalMiles(40.7128, -74.0060, 51.5074, -0.1278)
+fmt.Printf("NY to London: %.0f m (%.2f NM)\n", distanceMeters, distanceNM)
+
 // Rhumb line distance (constant bearing)
 rhumb := geo.RhumbLineDistance(40.7128, -74.0060, 51.5074, -0.1278)
 fmt.Printf("Rhumb distance: %.2f km\n", rhumb)
+
+// Additional units
+rhumbMeters := geo.RhumbLineDistanceMeters(40.7128, -74.0060, 51.5074, -0.1278)
+rhumbNM := geo.RhumbLineDistanceNauticalMiles(40.7128, -74.0060, 51.5074, -0.1278)
+fmt.Printf("Rhumb distance: %.0f m (%.2f NM)\n", rhumbMeters, rhumbNM)
 ```
 
 ### Geohash

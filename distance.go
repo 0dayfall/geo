@@ -5,10 +5,19 @@ import (
 )
 
 const (
+	// MetersPerKm converts kilometers to meters
+	MetersPerKm = 1000.0
+	// KmPerNauticalMile converts nautical miles to kilometers
+	KmPerNauticalMile = 1.852
+
 	// EarthRadiusKm is the Earth's radius in kilometers
 	EarthRadiusKm = 6371.0
 	// EarthRadiusMiles is the Earth's radius in miles
 	EarthRadiusMiles = 3959.0
+	// EarthRadiusMeters is the Earth's radius in meters
+	EarthRadiusMeters = EarthRadiusKm * MetersPerKm
+	// EarthRadiusNauticalMiles is the Earth's radius in nautical miles
+	EarthRadiusNauticalMiles = EarthRadiusKm / KmPerNauticalMile
 )
 
 // toRadians converts degrees to radians
@@ -38,6 +47,16 @@ func GreatCircleDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return EarthRadiusKm * c
+}
+
+// GreatCircleDistanceMeters returns the great circle distance in meters.
+func GreatCircleDistanceMeters(lat1, lon1, lat2, lon2 float64) float64 {
+	return GreatCircleDistance(lat1, lon1, lat2, lon2) * MetersPerKm
+}
+
+// GreatCircleDistanceNauticalMiles returns the great circle distance in nautical miles.
+func GreatCircleDistanceNauticalMiles(lat1, lon1, lat2, lon2 float64) float64 {
+	return GreatCircleDistance(lat1, lon1, lat2, lon2) / KmPerNauticalMile
 }
 
 // RhumbLineDistance calculates the rhumb line (loxodrome) distance between two points.
@@ -74,4 +93,14 @@ func RhumbLineDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	δ := math.Sqrt(Δφ*Δφ + q*q*Δλ*Δλ)
 
 	return δ * EarthRadiusKm
+}
+
+// RhumbLineDistanceMeters returns the rhumb line distance in meters.
+func RhumbLineDistanceMeters(lat1, lon1, lat2, lon2 float64) float64 {
+	return RhumbLineDistance(lat1, lon1, lat2, lon2) * MetersPerKm
+}
+
+// RhumbLineDistanceNauticalMiles returns the rhumb line distance in nautical miles.
+func RhumbLineDistanceNauticalMiles(lat1, lon1, lat2, lon2 float64) float64 {
+	return RhumbLineDistance(lat1, lon1, lat2, lon2) / KmPerNauticalMile
 }
