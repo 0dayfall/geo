@@ -54,6 +54,22 @@ fmt.Printf("Rhumb distance: %.2f km\n", rhumb)
 rhumbMeters := geo.RhumbLineDistanceMeters(40.7128, -74.0060, 51.5074, -0.1278)
 rhumbNM := geo.RhumbLineDistanceNauticalMiles(40.7128, -74.0060, 51.5074, -0.1278)
 fmt.Printf("Rhumb distance: %.0f m (%.2f NM)\n", rhumbMeters, rhumbNM)
+
+// Intermediate point along great circle (fraction 0..1)
+midLat, midLon := geo.GreatCircleIntermediatePoint(
+    40.7128, -74.0060,
+    51.5074, -0.1278,
+    0.5,
+)
+fmt.Printf("Midpoint: %.4f, %.4f\n", midLat, midLon)
+
+// Point along path given speed (km/h) and duration (hours)
+travelLat, travelLon := geo.GreatCirclePointAtSpeed(
+    40.7128, -74.0060,
+    51.5074, -0.1278,
+    800.0, 2.0,
+)
+fmt.Printf("After 2h at 800 km/h: %.4f, %.4f\n", travelLat, travelLon)
 ```
 
 ### Geohash

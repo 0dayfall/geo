@@ -155,3 +155,90 @@ func TestRhumbLineDistanceConversions(t *testing.T) {
 		t.Errorf("RhumbLineDistanceNauticalMiles() = %v, want %v", nm, km/KmPerNauticalMile)
 	}
 }
+
+func TestGreatCircleIntermediatePoint(t *testing.T) {
+	t.Run("fraction endpoints", func(t *testing.T) {
+		lat1, lon1 := 10.0, -20.0
+		lat2, lon2 := -5.0, 40.0
+
+		latStart, lonStart := GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, 0.0)
+		if math.Abs(latStart-lat1) > 1e-9 || math.Abs(lonStart-lon1) > 1e-9 {
+			t.Errorf("fraction 0 = (%v, %v), want (%v, %v)", latStart, lonStart, lat1, lon1)
+		}
+
+		latEnd, lonEnd := GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, 1.0)
+		if math.Abs(latEnd-lat2) > 1e-9 || math.Abs(lonEnd-lon2) > 1e-9 {
+			t.Errorf("fraction 1 = (%v, %v), want (%v, %v)", latEnd, lonEnd, lat2, lon2)
+		}
+	})
+
+	t.Run("equator midpoint", func(t *testing.T) {
+		lat, lon := GreatCircleIntermediatePoint(0.0, 0.0, 0.0, 90.0, 0.5)
+		if math.Abs(lat-0.0) > 1e-9 || math.Abs(lon-45.0) > 1e-9 {
+			t.Errorf("midpoint = (%v, %v), want (0, 45)", lat, lon)
+		}
+	})
+
+	t.Run("crosses equator", func(t *testing.T) {
+		lat, lon := GreatCircleIntermediatePoint(-10.0, 0.0, 10.0, 0.0, 0.5)
+		if math.Abs(lat-0.0) > 1e-9 || math.Abs(lon-0.0) > 1e-9 {
+			t.Errorf("midpoint = (%v, %v), want (0, 0)", lat, lon)
+		}
+	})
+
+	t.Run("distance fraction", func(t *testing.T) {
+		lat1, lon1 := 34.0522, -118.2437
+		lat2, lon2 := 51.5074, -0.1278
+		f := 0.25
+
+		latMid, lonMid := GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, f)
+		total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+		part := GreatCircleDistance(lat1, lon1, latMid, lonMid)
+		if math.Abs(part-total*f) > 1e-6*total {
+			t.Errorf("distance fraction = %v, want %v", part/total, f)
+		}
+	})
+}
+
+func TestGreatCirclePointAtDistance(t *testing.T) {
+	t.Run("equator half distance", func(t *testing.T) {
+		lat1, lon1 := 0.0, 0.0
+		lat2, lon2 := 0.0, 90.0
+		total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+
+		lat, lon := GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, total/2)
+		if math.Abs(lat-0.0) > 1e-9 || math.Abs(lon-45.0) > 1e-6 {
+			t.Errorf("point = (%v, %v), want (0, 45)", lat, lon)
+		}
+	})
+
+	t.Run("clamps to endpoints", func(t *testing.T) {
+		lat1, lon1 := 10.0, -20.0
+		lat2, lon2 := -5.0, 40.0
+		total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+
+		latStart, lonStart := GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, -10.0)
+		if math.Abs(latStart-lat1) > 1e-9 || math.Abs(lonStart-lon1) > 1e-9 {
+			t.Errorf("start clamp = (%v, %v), want (%v, %v)", latStart, lonStart, lat1, lon1)
+		}
+
+		latEnd, lonEnd := GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, total*2)
+		if math.Abs(latEnd-lat2) > 1e-9 || math.Abs(lonEnd-lon2) > 1e-9 {
+			t.Errorf("end clamp = (%v, %v), want (%v, %v)", latEnd, lonEnd, lat2, lon2)
+		}
+	})
+}
+
+func TestGreatCirclePointAtSpeed(t *testing.T) {
+	lat1, lon1 := 34.0522, -118.2437
+	lat2, lon2 := 51.5074, -0.1278
+	speedKmh := 900.0
+	durationHours := 2.5
+
+	latSpeed, lonSpeed := GreatCirclePointAtSpeed(lat1, lon1, lat2, lon2, speedKmh, durationHours)
+	latDist, lonDist := GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, speedKmh*durationHours)
+
+	if math.Abs(latSpeed-latDist) > 1e-9 || math.Abs(lonSpeed-lonDist) > 1e-9 {
+		t.Errorf("point at speed = (%v, %v), want (%v, %v)", latSpeed, lonSpeed, latDist, lonDist)
+	}
+}

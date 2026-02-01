@@ -30,6 +30,15 @@ func toDegrees(rad float64) float64 {
 	return rad * 180.0 / math.Pi
 }
 
+// normalizeLongitude keeps longitude in the [-180, 180] range.
+func normalizeLongitude(lon float64) float64 {
+	lon = math.Mod(lon+180.0, 360.0)
+	if lon < 0 {
+		lon += 360.0
+	}
+	return lon - 180.0
+}
+
 // GreatCircleDistance calculates the great circle distance between two points
 // using the Haversine formula. Coordinates are in degrees (latitude, longitude).
 // Returns distance in kilometers.
@@ -47,6 +56,61 @@ func GreatCircleDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return EarthRadiusKm * c
+}
+
+// GreatCircleIntermediatePoint returns the point at the given fraction along the
+// great circle path between two coordinates. Fraction 0 returns the start point,
+// fraction 1 returns the end point. Coordinates are in degrees (latitude, longitude).
+func GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, fraction float64) (float64, float64) {
+	φ1 := toRadians(lat1)
+	λ1 := toRadians(lon1)
+	φ2 := toRadians(lat2)
+	λ2 := toRadians(lon2)
+
+	Δφ := φ2 - φ1
+	Δλ := λ2 - λ1
+
+	a := math.Sin(Δφ/2)*math.Sin(Δφ/2) +
+		math.Cos(φ1)*math.Cos(φ2)*
+			math.Sin(Δλ/2)*math.Sin(Δλ/2)
+	δ := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	if δ == 0 {
+		return lat1, normalizeLongitude(lon1)
+	}
+
+	aCoef := math.Sin((1-fraction)*δ) / math.Sin(δ)
+	bCoef := math.Sin(fraction*δ) / math.Sin(δ)
+
+	x := aCoef*math.Cos(φ1)*math.Cos(λ1) + bCoef*math.Cos(φ2)*math.Cos(λ2)
+	y := aCoef*math.Cos(φ1)*math.Sin(λ1) + bCoef*math.Cos(φ2)*math.Sin(λ2)
+	z := aCoef*math.Sin(φ1) + bCoef*math.Sin(φ2)
+
+	φi := math.Atan2(z, math.Sqrt(x*x+y*y))
+	λi := math.Atan2(y, x)
+
+	return toDegrees(φi), normalizeLongitude(toDegrees(λi))
+}
+
+// GreatCirclePointAtDistance returns the point at a given distance (in kilometers)
+// along the great circle path between two coordinates. Distance is clamped to [0, total].
+func GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, distanceKm float64) (float64, float64) {
+	total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+	if total == 0 {
+		return lat1, normalizeLongitude(lon1)
+	}
+	if distanceKm <= 0 {
+		return lat1, normalizeLongitude(lon1)
+	}
+	if distanceKm >= total {
+		return lat2, normalizeLongitude(lon2)
+	}
+	return GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, distanceKm/total)
+}
+
+// GreatCirclePointAtSpeed returns the point after traveling at speedKmh for durationHours
+// along the great circle path between two coordinates.
+func GreatCirclePointAtSpeed(lat1, lon1, lat2, lon2, speedKmh, durationHours float64) (float64, float64) {
+	return GreatCirclePointAtDistance(lat1, lon1, lat2, lon2, speedKmh*durationHours)
 }
 
 // GreatCircleDistanceMeters returns the great circle distance in meters.
