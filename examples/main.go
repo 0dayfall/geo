@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Geo Library Examples ===\n")
+	fmt.Println("=== Geo Library Examples ===")
+	fmt.Println()
 
 	// 1. Great Circle Distance
 	fmt.Println("1. Great Circle Distance (Haversine)")

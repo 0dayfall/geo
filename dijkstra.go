@@ -143,7 +143,8 @@ func (g *Graph) Dijkstra(source int) *DijkstraResult {
 
 // GetPath reconstructs the shortest path from source to target
 func (r *DijkstraResult) GetPath(target int) []int {
-	if r.Previous[target] == -1 && target != 0 {
+	// Check if target is unreachable (infinite distance)
+	if math.IsInf(r.Distances[target], 1) {
 		return nil // no path exists
 	}
 
