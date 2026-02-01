@@ -20,6 +20,7 @@ func Geohash(lat, lon float64, precision int) string {
 	lonRange := [2]float64{-180.0, 180.0}
 
 	var geohash strings.Builder
+	geohash.Grow(precision)
 	var bits uint
 	var bit uint
 	even := true

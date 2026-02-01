@@ -54,6 +54,7 @@ func TestGreatCircleDistance(t *testing.T) {
 	}
 }
 
+
 func TestRhumbLineDistance(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -102,6 +103,7 @@ func TestRhumbLineDistance(t *testing.T) {
 		})
 	}
 }
+
 
 func TestDistanceComparison(t *testing.T) {
 	// Great circle should always be shorter than or equal to rhumb line
@@ -198,6 +200,7 @@ func TestGreatCircleIntermediatePoint(t *testing.T) {
 			t.Errorf("distance fraction = %v, want %v", part/total, f)
 		}
 	})
+
 }
 
 func TestGreatCirclePointAtDistance(t *testing.T) {
@@ -276,6 +279,46 @@ func TestGreatCircleProject(t *testing.T) {
 		}
 		if alongTrackKm <= GreatCircleDistance(lat1, lon1, lat2, lon2) {
 			t.Errorf("along-track = %v, want > total", alongTrackKm)
+		}
+	})
+}
+
+
+func TestGreatCircleProjectToSegment(t *testing.T) {
+	t.Run("clamps before start", func(t *testing.T) {
+		lat1, lon1 := 0.0, 0.0
+		lat2, lon2 := 0.0, 30.0
+		latP, lonP := 0.0, -20.0
+
+		projLat, projLon, crossTrackKm, alongTrackKm := GreatCircleProjectToSegment(lat1, lon1, lat2, lon2, latP, lonP)
+		if math.Abs(projLat-lat1) > 1e-9 || math.Abs(projLon-lon1) > 1e-9 {
+			t.Errorf("projected = (%v, %v), want start (%v, %v)", projLat, projLon, lat1, lon1)
+		}
+		if math.Abs(alongTrackKm-0) > 1e-9 {
+			t.Errorf("along-track = %v, want 0", alongTrackKm)
+		}
+		expectedCross := GreatCircleDistance(lat1, lon1, latP, lonP)
+		if math.Abs(crossTrackKm-expectedCross) > 1e-6 {
+			t.Errorf("cross-track = %v, want %v", crossTrackKm, expectedCross)
+		}
+	})
+
+	t.Run("clamps after end", func(t *testing.T) {
+		lat1, lon1 := 0.0, 0.0
+		lat2, lon2 := 0.0, 30.0
+		latP, lonP := 0.0, 60.0
+
+		projLat, projLon, crossTrackKm, alongTrackKm := GreatCircleProjectToSegment(lat1, lon1, lat2, lon2, latP, lonP)
+		if math.Abs(projLat-lat2) > 1e-9 || math.Abs(projLon-lon2) > 1e-9 {
+			t.Errorf("projected = (%v, %v), want end (%v, %v)", projLat, projLon, lat2, lon2)
+		}
+		total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+		if math.Abs(alongTrackKm-total) > 1e-6 {
+			t.Errorf("along-track = %v, want %v", alongTrackKm, total)
+		}
+		expectedCross := GreatCircleDistance(lat2, lon2, latP, lonP)
+		if math.Abs(crossTrackKm-expectedCross) > 1e-6 {
+			t.Errorf("cross-track = %v, want %v", crossTrackKm, expectedCross)
 		}
 	})
 }

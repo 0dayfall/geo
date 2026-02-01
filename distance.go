@@ -112,6 +112,28 @@ func GreatCircleProject(lat1, lon1, lat2, lon2, latP, lonP float64) (float64, fl
 	return projLat, projLon, crossTrackKm, alongTrackKm
 }
 
+// GreatCircleProjectToSegment projects a point onto the great circle route segment.
+// If the perpendicular projection falls outside the segment, the nearest endpoint
+// is returned. Along-track distance is clamped to [0, total]. Cross-track distance
+// is signed only when the projection falls within the segment; otherwise it is the
+// (positive) distance to the nearest endpoint.
+func GreatCircleProjectToSegment(lat1, lon1, lat2, lon2, latP, lonP float64) (float64, float64, float64, float64) {
+	projLat, projLon, crossTrackKm, alongTrackKm := GreatCircleProject(lat1, lon1, lat2, lon2, latP, lonP)
+	total := GreatCircleDistance(lat1, lon1, lat2, lon2)
+
+	if alongTrackKm < 0 {
+		return lat1, normalizeLongitude(lon1),
+			GreatCircleDistance(lat1, lon1, latP, lonP),
+			0
+	}
+	if alongTrackKm > total {
+		return lat2, normalizeLongitude(lon2),
+			GreatCircleDistance(lat2, lon2, latP, lonP),
+			total
+	}
+	return projLat, projLon, crossTrackKm, alongTrackKm
+}
+
 // GreatCircleIntermediatePoint returns the point at the given fraction along the
 // great circle path between two coordinates. Fraction 0 returns the start point,
 // fraction 1 returns the end point. Coordinates are in degrees (latitude, longitude).
@@ -123,7 +145,6 @@ func GreatCircleIntermediatePoint(lat1, lon1, lat2, lon2, fraction float64) (flo
 
 	Δφ := φ2 - φ1
 	Δλ := λ2 - λ1
-
 	a := math.Sin(Δφ/2)*math.Sin(Δφ/2) +
 		math.Cos(φ1)*math.Cos(φ2)*
 			math.Sin(Δλ/2)*math.Sin(Δλ/2)

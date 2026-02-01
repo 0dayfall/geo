@@ -1,6 +1,10 @@
 # geo
 
-Geo is a lightweight toolkit for spatial routing and optimization. It provides great-circle distance, geohash indexing, graph search with Dijkstra, and heuristics for TSP. Designed for logistics, maritime and mapping use, it enables fast proximity queries, clustering, and path planning on real-world networks.
+Geo is a lightweight Go library for geographic routing and spatial optimization built for logistics, mapping, and maritime workflows. It focuses on fast, practical calculations rather than heavyweight GIS dependencies, making it easy to embed in services, CLIs, and batch jobs. The distance module provides great-circle (Haversine) and rhumb-line calculations, plus helpers for meters and nautical miles so you can work in aviation or maritime units without manual conversion. It also includes great-circle interpolation: you can compute intermediate points by fraction, by distance, or by speed and elapsed time, enabling ETA tracking, breadcrumb generation, and animation along long-haul routes. For navigation accuracy, off-track positions can be projected back onto a great-circle leg, returning the projected coordinate, cross-track error, and along-track progress; a clamped variant snaps to the nearest endpoint when the perpendicular falls outside the segment. This makes it simple to detect deviation, measure progress, and correct course.
+
+Geohash utilities provide compact spatial indexing with encode/decode, neighbor lookup, and error bounds. These functions support proximity queries, grid bucketing, heat-map aggregation, and spatial joins without a database extension. The graph package offers Dijkstra's shortest-path algorithm over weighted directed or undirected graphs, suitable for routing over custom networks or multimodal links. For route optimization, the TSP module includes a nearest-neighbor baseline, 2-opt improvement, and simulated annealing for larger problem sizes, allowing you to trade optimality for speed. The algorithms are designed to be readable, composable, and easy to test, which makes them suitable for educational use as well as production services.
+
+The library is intentionally small, dependency-free, and well-tested. Examples illustrate distance calculations, geohash usage, Dijkstra routing, and TSP solving with both synthetic matrices and real geographic coordinates. The API favors clear, unit-explicit function names, and the code is organized for easy extension if you need custom earth radii, alternate distance metrics, or additional heuristics. Geo is a practical foundation for real-world route planning, monitoring, and spatial analytics in Go. Whether you are planning truck routes, estimating vessel progress, or clustering delivery points, Geo gives you the core building blocks without getting in the way. It favors explicit units and predictable behavior.
 
 ## Features
 
@@ -79,6 +83,15 @@ projLat, projLon, crossTrackKm, alongTrackKm := geo.GreatCircleProject(
 )
 fmt.Printf("Projection: %.4f, %.4f\n", projLat, projLon)
 fmt.Printf("Cross-track: %.2f km, Along-track: %.2f km\n", crossTrackKm, alongTrackKm)
+
+// Clamped projection to the segment (snaps to endpoints if outside)
+segLat, segLon, segCrossKm, segAlongKm := geo.GreatCircleProjectToSegment(
+    0.0, 0.0,
+    0.0, 30.0,
+    0.0, 60.0,
+)
+fmt.Printf("Segment projection: %.4f, %.4f\n", segLat, segLon)
+fmt.Printf("Cross-track: %.2f km, Along-track: %.2f km\n", segCrossKm, segAlongKm)
 ```
 
 ### Geohash
@@ -153,6 +166,16 @@ go run main.go
 ```bash
 go test ./...
 ```
+
+## Benchmarks
+
+Run all benchmarks (skipping tests) and include allocation stats:
+
+```bash
+go test -bench . -benchmem -run ^$
+```
+
+Baseline results are tracked in `BENCHMARKS.md` for easy comparison over time.
 
 ## License
 
