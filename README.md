@@ -14,6 +14,13 @@ The library is intentionally small, dependency-free, and well-tested. Examples i
   - Distance outputs in kilometers, meters, and nautical miles
   - Great-circle projection with cross-track and along-track distances (segment-clamped or infinite)
 
+- **GeoJSON Helpers**
+  - LineString point-at-distance
+  - Great-circle and rhumb bearings
+  - BBox center, polygon centroid (center of mass), and point-on-surface
+  - Great-circle routes as LineString or MultiLineString
+  - Line and polygon distance utilities
+
 - **Geohash**
   - Encode geographic coordinates into geohash strings
   - Decode geohash strings back to coordinates
@@ -93,6 +100,49 @@ segLat, segLon, segCrossKm, segAlongKm := geo.GreatCircleProjectToSegment(
 )
 fmt.Printf("Segment projection: %.4f, %.4f\n", segLat, segLon)
 fmt.Printf("Cross-track: %.2f km, Along-track: %.2f km\n", segCrossKm, segAlongKm)
+```
+
+### GeoJSON
+
+```go
+// LineString point at distance (km)
+line := geo.NewLineString([]geo.Position{
+    {0, 0},
+    {90, 0},
+})
+pt, _ := geo.LineStringPointAtDistance(line, 5000)
+
+// Bearings
+start := geo.NewPoint(0, 0)
+end := geo.NewPoint(10, 0)
+gcBearing := geo.GeoJSONBearing(start, end)
+rhumbBearing := geo.GeoJSONRhumbBearing(start, end)
+
+// Centers
+fc := geo.NewFeatureCollection([]geo.Feature{
+    geo.NewFeature(geo.NewPoint(0, 0)),
+    geo.NewFeature(geo.NewPoint(10, 10)),
+})
+center, _ := geo.GeoJSONCenter(fc)
+com, _ := geo.GeoJSONCenterOfMass(fc)
+
+// Point on surface
+surfacePoint, _ := geo.GeoJSONPointOnSurface(fc)
+
+// Great-circle route as LineString or MultiLineString
+route, _ := geo.GreatCircleGeoJSON(
+    geo.NewPoint(179, 0),
+    geo.NewPoint(-179, 0),
+    10,
+)
+
+_ = pt
+_ = gcBearing
+_ = rhumbBearing
+_ = center
+_ = com
+_ = surfacePoint
+_ = route
 ```
 
 ### Geohash

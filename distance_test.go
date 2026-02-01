@@ -54,7 +54,6 @@ func TestGreatCircleDistance(t *testing.T) {
 	}
 }
 
-
 func TestRhumbLineDistance(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -104,6 +103,40 @@ func TestRhumbLineDistance(t *testing.T) {
 	}
 }
 
+func TestBearing(t *testing.T) {
+	bearingNorth := Bearing(0.0, 0.0, 10.0, 0.0)
+	if math.Abs(bearingNorth-0.0) > 1e-6 {
+		t.Errorf("Bearing north = %v, want 0", bearingNorth)
+	}
+	bearingEast := Bearing(0.0, 0.0, 0.0, 10.0)
+	if math.Abs(bearingEast-90.0) > 1e-6 {
+		t.Errorf("Bearing east = %v, want 90", bearingEast)
+	}
+}
+
+func TestRhumbLineBearing(t *testing.T) {
+	bearingEast := RhumbLineBearing(0.0, 0.0, 0.0, 10.0)
+	if math.Abs(bearingEast-90.0) > 1e-6 {
+		t.Errorf("RhumbLineBearing east = %v, want 90", bearingEast)
+	}
+}
+
+func TestRhumbLineDestination(t *testing.T) {
+	lat, lon := RhumbLineDestination(0.0, 0.0, 1000.0, 90.0)
+	expectedLon := toDegrees(1000.0 / EarthRadiusKm)
+	if math.Abs(lat-0.0) > 1e-6 || math.Abs(lon-expectedLon) > 1e-4 {
+		t.Errorf("RhumbLineDestination() = (%v, %v), want (0, %v)", lat, lon, expectedLon)
+	}
+}
+
+func TestRhumbLineDistanceUnits(t *testing.T) {
+	km := RhumbLineDistance(0.0, 0.0, 0.0, 10.0)
+	nm := RhumbLineDistanceUnits(0.0, 0.0, 0.0, 10.0, UnitNauticalMiles)
+	expected := km / KmPerNauticalMile
+	if math.Abs(nm-expected) > 1e-6 {
+		t.Errorf("RhumbLineDistanceUnits() = %v, want %v", nm, expected)
+	}
+}
 
 func TestDistanceComparison(t *testing.T) {
 	// Great circle should always be shorter than or equal to rhumb line
@@ -282,7 +315,6 @@ func TestGreatCircleProject(t *testing.T) {
 		}
 	})
 }
-
 
 func TestGreatCircleProjectToSegment(t *testing.T) {
 	t.Run("clamps before start", func(t *testing.T) {

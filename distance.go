@@ -30,6 +30,15 @@ func toDegrees(rad float64) float64 {
 	return rad * 180.0 / math.Pi
 }
 
+// normalizeBearingDegrees keeps bearing in the [0, 360) range.
+func normalizeBearingDegrees(deg float64) float64 {
+	deg = math.Mod(deg, 360.0)
+	if deg < 0 {
+		deg += 360.0
+	}
+	return deg
+}
+
 // normalizeLongitude keeps longitude in the [-180, 180] range.
 func normalizeLongitude(lon float64) float64 {
 	lon = math.Mod(lon+180.0, 360.0)
@@ -80,6 +89,13 @@ func GreatCircleDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return EarthRadiusKm * c
+}
+
+// Bearing calculates the initial great-circle bearing from point 1 to point 2.
+// Returned bearing is in degrees from true north, in the range [0, 360).
+func Bearing(lat1, lon1, lat2, lon2 float64) float64 {
+	bearingRad := initialBearingRad(lat1, lon1, lat2, lon2)
+	return normalizeBearingDegrees(toDegrees(bearingRad))
 }
 
 // GreatCircleProject projects a point onto the great circle path between two coordinates.
@@ -232,6 +248,62 @@ func RhumbLineDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	δ := math.Sqrt(Δφ*Δφ + q*q*Δλ*Δλ)
 
 	return δ * EarthRadiusKm
+}
+
+// RhumbLineBearing calculates the constant bearing (rhumb line) from point 1 to point 2.
+// Returned bearing is in degrees from true north, in the range [0, 360).
+func RhumbLineBearing(lat1, lon1, lat2, lon2 float64) float64 {
+	φ1 := toRadians(lat1)
+	φ2 := toRadians(lat2)
+	Δλ := toRadians(lon2 - lon1)
+
+	// Handle crossing antimeridian
+	if math.Abs(Δλ) > math.Pi {
+		if Δλ > 0 {
+			Δλ = -(2*math.Pi - Δλ)
+		} else {
+			Δλ = 2*math.Pi + Δλ
+		}
+	}
+
+	Δψ := math.Log(math.Tan(φ2/2+math.Pi/4) / math.Tan(φ1/2+math.Pi/4))
+	θ := math.Atan2(Δλ, Δψ)
+	return normalizeBearingDegrees(toDegrees(θ))
+}
+
+// RhumbLineDestination returns the destination point after traveling along a rhumb line.
+// Bearing is in degrees from true north. Distance is in kilometers.
+// Returns coordinates in degrees (latitude, longitude).
+func RhumbLineDestination(lat, lon, distanceKm, bearingDeg float64) (float64, float64) {
+	φ1 := toRadians(lat)
+	λ1 := toRadians(lon)
+	θ := toRadians(bearingDeg)
+	δ := distanceKm / EarthRadiusKm
+
+	φ2 := φ1 + δ*math.Cos(θ)
+	if φ2 > math.Pi/2 {
+		φ2 = math.Pi / 2
+	} else if φ2 < -math.Pi/2 {
+		φ2 = -math.Pi / 2
+	}
+
+	Δψ := math.Log(math.Tan(φ2/2+math.Pi/4) / math.Tan(φ1/2+math.Pi/4))
+	var q float64
+	if math.Abs(Δψ) > 1e-12 {
+		q = (φ2 - φ1) / Δψ
+	} else {
+		q = math.Cos(φ1)
+	}
+
+	Δλ := δ * math.Sin(θ) / q
+	λ2 := λ1 + Δλ
+
+	return toDegrees(φ2), normalizeLongitude(toDegrees(λ2))
+}
+
+// RhumbLineDistanceUnits returns rhumb line distance in the requested unit.
+func RhumbLineDistanceUnits(lat1, lon1, lat2, lon2 float64, unit DistanceUnit) float64 {
+	return ConvertDistanceFromKm(RhumbLineDistance(lat1, lon1, lat2, lon2), unit)
 }
 
 // RhumbLineDistanceMeters returns the rhumb line distance in meters.
